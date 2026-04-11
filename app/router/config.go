@@ -19,12 +19,24 @@ import (
 
 type Rule struct {
 	Tag           string
+	DynamicTag    OutboundPicker
 	Balancer      *Balancer
 	Condition     Condition
 	SetAttributes []*SetAttribute
 }
 
-func (r *Rule) GetTag() (string, error) {
+func (r *Router) AddRule(rr *Rule) {
+	r.rules = append(r.rules, rr)
+}
+
+type OutboundPicker interface {
+	PickOutbound(ctx routing.Context) (string, error)
+}
+
+func (r *Rule) GetTag(ctx routing.Context) (string, error) {
+	if r.DynamicTag != nil {
+		return r.DynamicTag.PickOutbound(ctx)
+	}
 	if r.Balancer != nil {
 		return r.Balancer.PickOutbound()
 	}
